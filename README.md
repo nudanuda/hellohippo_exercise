@@ -26,11 +26,31 @@ For each `ndc`, the most frequently prescribed quantities.
 
 ---
 
+## High-level architecture
+```text
+Input files (CSV / JSON)
+        |
+        v
+Event parsing & validation
+        |
+        v
+Event processor (claims / reverts)
+        |
+        v
+In-memory state (aggregations & counters)
+        |
+        v
+Output builders
+        |
+        v
+JSON exports
+```
+---
+
 ## Key design decisions
 
 - **Event-driven processing**  
-  Claims and reverts are processed incrementally, event by event.  
-
+  Claims and reverts are processed incrementally, event by event.
 
 - **Pure Python, no heavy frameworks**  
   Dictionaries and lightweight aggregates are sufficient for the required scale.  
@@ -49,18 +69,17 @@ For each `ndc`, the most frequently prescribed quantities.
 
 ---
 
-## How to run
-
 ### Requirements
 - Python 3.11+
 
 No external dependencies are required.
 
-### Run command
+### How to run
 
 From the project root:
 
 ```bash
+export PYTHONPATH=src
 python -m events_processor.main \
   --pharmacies data_source/data/pharmacies \
   --claims data_source/data/claims \
