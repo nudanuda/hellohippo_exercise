@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from collections import defaultdict
 from decimal import Decimal, ROUND_HALF_UP
 from typing import Dict, List, Tuple
@@ -57,48 +55,3 @@ def build_goal3_from_goal2(
 
     result.sort(key=lambda r: r["ndc"])
     return result
-
-
-
-
-
-
-# from __future__ import annotations
-#
-# from dataclasses import dataclass
-# from decimal import Decimal
-# from typing import Dict, Tuple
-#
-# from ..models import ClaimRecord
-#
-#
-# @dataclass(slots=True)
-# class ChainAgg:
-#     active_cnt: int = 0
-#     active_unit_price_sum: Decimal = Decimal("0")
-#
-#
-# class Goal3Recommend:
-#     def __init__(self) -> None:
-#         self._by_ndc_chain: Dict[Tuple[str, str], ChainAgg] = {}
-#
-#     def on_claim(self, cr: ClaimRecord) -> None:
-#         key = (cr.ndc, cr.chain)
-#         agg = self._by_ndc_chain.get(key)
-#         if agg is None:
-#             agg = ChainAgg()
-#             self._by_ndc_chain[key] = agg
-#         agg.active_cnt += 1
-#         agg.active_unit_price_sum += cr.unit_price
-#
-#     def on_revert(self, cr: ClaimRecord) -> None:
-#         key = (cr.ndc, cr.chain)
-#         agg = self._by_ndc_chain.get(key)
-#         if agg is None:
-#             agg = ChainAgg()
-#             self._by_ndc_chain[key] = agg
-#         agg.active_cnt -= 1
-#         agg.active_unit_price_sum -= cr.unit_price
-#
-#     def snapshot(self) -> Dict[Tuple[str, str], ChainAgg]:
-#         return self._by_ndc_chain

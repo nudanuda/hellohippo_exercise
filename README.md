@@ -47,37 +47,43 @@ JSON exports
 ```
 ---
 
-## Key design decisions
+## Key design decisions & trade-offs
 
-- **Event-driven processing**  
-  Claims and reverts are processed incrementally, event by event.
+- **Event-driven core**
+Claims and reverts are processed as events, allowing both batch and streaming ingestion without changing business logic.
 
-- **Pure Python, no heavy frameworks**  
-  Dictionaries and lightweight aggregates are sufficient for the required scale.  
-  This keeps the solution simple and fast while leaving room to plug in Spark/Flink later if needed.
+- **Explicit trade-offs**
+ - All aggregations are kept in memory.
+ - File discovery uses polling, not filesystem notifications.
+ - JSON files are read fully (assumed to be reasonably sized).
 
-- **Clear separation of concerns**
-  - Parsing & validation of input data
-  - Core business logic and state
-  - Output building and serialization
+- **Scalability path**
+For very large datasets or high-volume streams, this design can be extended by:
+	- replacing file polling with Kafka/PubSub/S3 events
+	- moving aggregations to Spark Structured Streaming or Flink
+	- persisting state in an external store
 
-- **Future-ready**
-  The same core can be reused for:
-  - batch processing (current mode)
-  - directory watching / streaming ingestion
-  - alternative storage backends
+These changes would not affect the core event-processing logic
 
 ---
+## Assumptions
 
-### Requirements
+- Input files are append-only
+- Pharmacy snapshot is relatively stable (Pharmacy data is assumed to change infrequently and is fully reloaded at startup).
+- JSON files are reasonably sized
+- Event ordering is not guaranteed (Revert events may arrive before their corresponding claims and are handled accordingly).
+---
+
+## Requirements
 - Python 3.11+
-
 No external dependencies are required.
 
-### How to run
+## How to run
+The application supports two execution modes.
 
+**1. Batch mode (default)**
+Processes all existing files once and exits.
 From the project root:
-
 ```bash
 export PYTHONPATH=src
 python -m events_processor.main \
@@ -85,3 +91,26 @@ python -m events_processor.main \
   --claims data_source/data/claims \
   --reverts data_source/data/reverts \
   --out out
+```
+**2. Streaming mode (--streaming)**
+Continuously watches directories for new files and processes them incrementally.
+
+From the project root:
+```bash
+export PYTHONPATH=src
+python -m events_processor.main \
+  --pharmacies data_source/data/pharmacies \
+  --claims data_source/data/claims \
+  --reverts data_source/data/reverts \
+  --out out \
+  --streaming \
+  --poll-interval 60
+```
+
+In streaming mode:
+
+- the application does not terminate
+- new JSON files are picked up on each poll
+- outputs are updated incrementally
+
+stop with Ctrl+C
